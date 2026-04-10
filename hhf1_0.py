@@ -258,9 +258,23 @@ def create_frigate_from_input():
     print(" 🚀 호위함 잠재력 측정기: 데이터 입력")
     print("="*40)
     name = input("호위함 이름: ")
+    
+    # 함종 입력을 표준화하기 위한 매핑 사전
+    archetype_map = {
+        'combat': COMBAT, '전투': COMBAT,
+        'explore': EXPLORE, '탐험': EXPLORE,
+        'mining': INDUSTRY, 'industry': INDUSTRY, '산업': INDUSTRY,
+        'trade': TRADE, '무역': TRADE,
+        'support': SUPPORT, '지원': SUPPORT, 'default': SUPPORT
+    }
+    
     print(f"함종 선택 (Combat, Explore, Mining, Trade, Support): ", end="")
-    archetype_str = input().upper()
-    archetype = f"FRIGATETYPE.{archetype_str}"
+    archetype_input = input().lower().strip()
+    # 매핑 사전에 없으면 입력값을 대문자로 바꿔서 시도, 실패 시 COMBAT 기본값
+    archetype = archetype_map.get(archetype_input, f"FRIGATETYPE.{archetype_input.upper()}")
+    if archetype not in ALL_TYPES:
+        archetype = COMBAT
+
     print("\n[1] 현재 화면에 표시된 4대 스탯 입력")
     c = int(input("  전투(Combat): "))
     e = int(input("  탐험(Exploration): "))
@@ -303,7 +317,6 @@ def create_frigate_from_input():
         if len(data) < 2: continue
         word, val = data[0], int(data[1])
         if word in key_map:
-            # 부정적 특성 DB에서 검색
             match = next((t for t in NEGATIVE_TRAIT_DATABASE if t.bonus_type == key_map[word] and t.bonus_strength == val), None)
             if match:
                 f.negative_traits.append(match)
@@ -348,7 +361,6 @@ def load_all_frigates(filename="frigate.txt"):
             if not line.strip(): continue
             d = json.loads(line)
             
-            # 객체 복원
             frigate = Frigate(d["name"], d["archetype"])
             frigate.current_stats = d["current_stats"]
             frigate.base_stats = d["base_stats"]
